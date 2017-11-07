@@ -1,0 +1,33 @@
+{
+  "name": "e-joi",
+  "version": "0.0.1",
+  "description": "Joi middleware for express",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/foundy/e-joi.git"
+  },
+  "keywords": [
+    "express",
+    "joi",
+    "validation"
+  ],
+  "author": "foundy <foundy@foundy.io>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/foundy/e-joi/issues"
+  },
+  "homepage": "https://github.com/foundy/e-joi#readme",
+  "dependencies": {
+    "joi": "^13.0.1"
+  },
+  "devDependencies": {
+    "body-parser": "^1.18.2",
+    "express": "^4.16.2",
+    "mocha": "^4.0.1",
+    "supertest": "^3.0.0"
+  }
+}
