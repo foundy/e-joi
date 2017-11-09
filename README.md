@@ -2,7 +2,11 @@
 
 Joi middleware for express
 
-## Usage
+# Getting Started
+
+`$ npm install e-joi`
+
+# Usage
 
 ```javascript
 const Joi = require('joi');
@@ -15,7 +19,14 @@ const schema = {
 };
 
 app.get('/foo', eJoi(schema), (req, res) => res.send('enjoy!'));
+```
 
+# API
+
+* `eJoi(schema[, callback])`
+* `eJoi(schema, options[, callback])`
+
+```javascript
 // Joi validate options
 const options = { convert: false };
 
@@ -32,7 +43,7 @@ const customCallback = (req, res, next, result) => next();
 app.get('/foo', eJoi(schema, options, customCallback), (req, res) => res.send('enjoy!'));
 ```
 
-## Options (for handling callback)
+## Options (for handling eJoi.callback)
 
 * `nextRoute`: when `true`, pass control to the next route.
 * `override`

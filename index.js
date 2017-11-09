@@ -80,6 +80,10 @@ function validateCallback(options = {}) {
  * @returns {Object} Joi schema object
  */
 function compile(schema) {
+  if (typeof schema !== 'object') {
+    throw new Error('Invalid schema object');
+  }
+
   try {
     return schema.isJoi ? schema : Joi.compile(schema);
   } catch (err) {

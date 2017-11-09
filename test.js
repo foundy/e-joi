@@ -1,22 +1,57 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const request = require('supertest');
+const { expect } = require('chai');
 const Joi = require('joi');
 const eJoi = require('./');
 
-describe('arguments check', () => {
+describe('eJoi', () => {
 
-  // describe('no arguments', () => {
-  //   it('should return an error', done => done());
-  //   it('should return an error if no schema', done => done());
-  // });
+  it('should throw an exception if without arguments.', done => {
+    expect(() => eJoi()).to.throw('Invalid schema object');
 
-  describe('schema', () => {
-    it('should assert the response text', done => {
+    done();
+  });
+
+  describe('compile', () => {
+
+    it('should return a 500 status and Joi validation error.', done => {
+      const schema = { headers: { city: 'seoul' } };
       const app = express();
-      const schema = {
-        body: Joi.any(),
-      };
+
+      app.get('/foo', eJoi(schema, { allowUnknown: true }), (req, res) => res.send('enjoy'));
+
+      app.use((err, req, res, next) => res.json(err));
+
+      request(app)
+        .get('/foo')
+        .set({ city: 'bangkok' })
+        .end((err, res) => {
+          expect(res.body.isJoi).to.equal(true);
+          expect(res.body.name).to.equal('ValidationError');
+          done();
+        });
+    });
+
+    it('should return a 200 status and `enjoy` string.', done => {
+      const schema = { headers: { city: 'seoul' } };
+      const app = express();
+
+      app.get('/foo', eJoi(schema, { allowUnknown: true }), (req, res) => res.send('enjoy'));
+
+      request(app)
+        .get('/foo')
+        .set({ city: 'seoul' })
+        .expect(200, 'enjoy', done);
+    });
+
+  });
+
+  describe('Pass only the schema', () => {
+
+    it('should respond with 200 status and `enjoy`.', done => {
+      const schema = { body: Joi.any() };
+      const app = express();
 
       app.get('/foo', eJoi(schema), (req, res) => res.send('enjoy'));
 
@@ -24,116 +59,103 @@ describe('arguments check', () => {
         .get('/foo')
         .expect(200, 'enjoy', done);
     });
+
   });
 
-  describe('schema, options', () => {
-    it('should assert the response text', done => {
-      const app = express();
-      const schema = {
-        body: Joi.any(),
-      };
+  describe('Passing schema and options', () => {
 
-      app.get('/foo', eJoi(schema, { convert: true }), (req, res) => res.send('enjoy'));
+    it('should respond with 200 status and `enjoy` by allowing the allowUnknown option.', done => {
+      const schema = Joi.object().keys({
+        headers: Joi.object().keys({
+          city: Joi.string().valid('seoul').required(),
+        }),
+      });
+      const app = express();
+
+      app.get('/foo', eJoi(schema, { allowUnknown: true }), (req, res) => res.send('enjoy'));
 
       request(app)
         .get('/foo')
+        .set('city', 'seoul')
         .expect(200, 'enjoy', done);
     });
-  });
 
-  describe('schema, callback', () => {
-    it('should assert the response body', done => {
+    it('should respond with a type error by disabling the convert option.', done => {
+      const schema = Joi.object().keys({
+        headers: Joi.object().keys({
+          cities: Joi.object(),
+        }).options({ allowUnknown: true }),
+      });
       const app = express();
 
-      app.use(bodyParser.json());
+      app.get('/foo', eJoi(schema, { convert: false }), (req, res) => res.send('enjoy'));
 
-      const schema = {
-        body: Joi.any(),
-      };
-
-      app.post('/foo', eJoi(schema, (req, res, next, result) => {
-        result
-          .then(value => res.json(value.body))
-          .catch(error => next(error));
-      }));
-
-      request(app)
-        .post('/foo')
-        .send({ foo: 'bar' })
-        .expect(200, { foo: 'bar' }, done);
-    });
-  });
-
-  describe('schema, options, callback', () => {
-    it('should assert the response text via second route', done => {
-      const app = express();
-      const schema = {
-        body: Joi.any(),
-      };
-
-      app.get('/foo', eJoi(schema, { convert: true }, eJoi.callback({ nextRoute: true })), (req, res) => res.send('enjoy'));
-      app.get('/foo', (req, res) => res.send('response from next route'));
+      app.use((err, req, res, next) => res.status(500).send(err.message));
 
       request(app)
         .get('/foo')
-        .expect(200, 'response from next route', done);
+        .set('cities', JSON.stringify({ korea: 'seoul' }))
+        .expect(500)
+        .end((err, res) => {
+          expect(res.text).to.equal('child "headers" fails because [child "cities" fails because ["cities" must be an object]]');
+          done();
+        });
     });
+
   });
 
-  // describe('performance', () => {
-  //   it('request performance test - stripUnknown', done => {
-  //     const app = express();
-  //     const stripSchema = Joi.object({
-  //       headers: Joi.any(),
-  //       body: Joi.any(),
-  //       params: Joi.any(),
-  //       query: Joi.any(),
-  //     });
-  //     const schema = Joi.object({
-  //       body: Joi.any(),
-  //     });
+  describe('Schema passing and eJoi callback handling', () => {
 
-  //     app.get('/foo', (req, res, next) => {
-  //       console.time('stripUnknown');
-  //       const stripReq = Joi.validate(req, stripSchema, { stripUnknown: true });
+    it('should not be overridden.', done => {
+      const schema = Joi.object().keys({
+        headers: Joi.object().keys({
+          cities: Joi.object(),
+        }).options({ allowUnknown: true }),
+      });
+      const eJoiMiddleware = eJoi(schema, eJoi.callback({ override: false }));
+      const app = express();
 
-  //       Joi.validate(stripReq, schema, (err, value) => {
-  //         console.timeEnd('stripUnknown');
-  //         next();
-  //       });
-  //     }, (req, res) => res.send('enjoy'));
+      app.get('/foo', eJoiMiddleware, (req, res) => res.json({ cities: req.get('cities') }));
 
-  //     request(app)
-  //       .get('/foo')
-  //       .expect(200, 'enjoy', done);
-  //   });
+      request(app)
+        .get('/foo')
+        .set('cities', JSON.stringify({ korea: 'seoul', thailand: 'bangkok' }))
+        .expect(200, { cities: '{"korea":"seoul","thailand":"bangkok"}' }, done);
+    });
 
-  //   it('request performance test - custom', done => {
-  //     const app = express();
-  //     const schema = Joi.object({
-  //       body: Joi.any(),
-  //     });
+    it('should pass through the middleware and then move to the next route.', done => {
+      const schema = Joi.object().keys({
+        headers: Joi.any(),
+      });
+      const eJoiMiddleware = eJoi(schema, eJoi.callback({ nextRoute: true }));
+      const app = express();
 
-  //     app.get('/foo', (req, res, next) => {
-  //       console.time('custom');
-  //       const stripReq = {};
+      app.get('/foo', eJoiMiddleware, (req, res) => res.send('current'));
+      app.get('/foo', (req, res) => res.send('next route'));
 
-  //       ['headers', 'body', 'params', 'query'].reduce((obj, val) => {
-  //         obj[val] = req[val];
-  //         return obj;
-  //       }, stripReq);
+      request(app)
+        .get('/foo')
+        .expect(200, 'next route', done);
+    });
 
-  //       Joi.validate(stripReq, schema, (err, value) => {
-  //         console.timeEnd('custom');
-  //         next();
-  //       });
-  //     }, (req, res) => res.send('enjoy'));
+  });
 
-  //     request(app)
-  //       .get('/foo')
-  //       .expect(200, 'enjoy', done);
-  //   });
+  describe('Use custom callback', () => {
 
-  // });
+    it('should assert the response text via second route', done => {
+      const schema = Joi.object().keys({
+        headers: Joi.any(),
+      });
+      const customCallback = (req, res, next, promise) => res.send('custom callback');
+      const app = express();
+
+      app.get('/foo', eJoi(schema, customCallback), (req, res) => res.send('enjoy'));
+
+      request(app)
+        .get('/foo')
+        .expect(200, 'custom callback', done);
+    });
+
+  });
 
 });
