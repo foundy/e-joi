@@ -13,7 +13,8 @@
   "keywords": [
     "express",
     "joi",
-    "validation"
+    "validation",
+    "middleware"
   ],
   "author": "foundy <foundy@foundy.io>",
   "license": "MIT",
