@@ -142,18 +142,25 @@ describe('eJoi', () => {
 
   describe('Use custom callback', () => {
 
-    it('should assert the response text via second route', done => {
+    it('should return a 415 `Unsupported Media Type` error.', done => {
       const schema = Joi.object().keys({
-        headers: Joi.any(),
+        headers: Joi.object().keys({
+          'content-type': Joi.string().valid('application/json').required(),
+        }),
       });
-      const customCallback = (req, res, next, promise) => res.send('custom callback');
+      const customCallback = (req, res, next, promise) => {
+        promise
+          .then(value => next())
+          .catch(error => res.status(415).end());
+      };
       const app = express();
 
-      app.get('/foo', eJoi(schema, customCallback), (req, res) => res.send('enjoy'));
+      app.get('/foo', eJoi(schema, { allowUnknown: true }, customCallback), (req, res) => res.send('enjoy'));
 
       request(app)
         .get('/foo')
-        .expect(200, 'custom callback', done);
+        .set('Content-Type', 'application/xml')
+        .expect(415, done);
     });
 
   });
