@@ -45,9 +45,9 @@ app.get('/foo', eJoi(schema, options, customCallback), (req, res) => res.send('e
 
 ## Options (for handling eJoi.callback)
 
-* `nextRoute`: when `true`, pass control to the next route.
-* `override`
-  * when `true`, override the defined request properties.
+* `nextRoute`: when `true`, pass control to the next route. Defaults to `false`.
+* `override`: override the defined request properties. Defaults to `true`.
+  * when `true`, Override the properties.
 
 ```javascript
 const callback = eJoi.callback({ nextRoute: true, override: false });
@@ -57,9 +57,11 @@ app.post('/foo', eJoi(schema, callback), (req, res) => res.send('enjoy!'));
 
 ## Custom callback
 
-This function returns a Promise-like object that can be used as a promise, or as a simple object like.
+### `fn(req, res, next, result)`
 
-Please refer to the [Joi API Reference](https://github.com/hapijs/joi/blob/v13.0.1/API.md#validatevalue-schema-options-callback).
+> This function returns a Promise-like object that can be used as a promise, or as a simple object like.
+>
+> Please refer to the [Joi API Reference](https://github.com/hapijs/joi/blob/v13.0.1/API.md#validatevalue-schema-options-callback)
 
 ```javascript
 const myCallback = (req, res, next, result) => {
