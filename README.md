@@ -1,4 +1,5 @@
 # e-joi
+[![Build Status](https://travis-ci.org/foundy/e-joi.svg?branch=master)](https://travis-ci.org/foundy/e-joi)
 
 Joi middleware for express
 
