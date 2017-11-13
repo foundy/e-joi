@@ -49,11 +49,26 @@ app.get('/foo', eJoi(schema, options, customCallback), (req, res) => res.send('e
 * `nextRoute`: when `true`, pass control to the next route. Defaults to `false`.
 * `override`: override the defined request properties. Defaults to `true`.
   * when `true`, Override the properties.
+  * when `false`, Not override.
+  * when `array`, Override the properties of the array element.
+  * when `string`, Override the properties of the string.
 
 ```javascript
-const callback = eJoi.callback({ nextRoute: true, override: false });
+// next route
+const callback = eJoi.callback({ nextRoute: true });
 
+// response 'enjoy!'
+app.post('/foo', eJoi(schema, callback), (req, res) => res.send('sad..'));
 app.post('/foo', eJoi(schema, callback), (req, res) => res.send('enjoy!'));
+```
+
+```javascript
+// override `false`
+const callback = eJoi.callback({ override: false });
+// override headers and params
+const callback = eJoi.callback({ override: ['headers', 'params'] });
+// override body
+const callback = eJoi.callback({ override: 'body' });
 ```
 
 ## Custom callback
