@@ -59,7 +59,7 @@ function validateCallback(options = {}) {
     promise
       .then(value => {
         if (opts.override) {
-          Object.assign(req, value);
+          Object.assign(req, stripUnknownProperties(value, opts.override));
         }
 
         if (opts.nextRoute) {
@@ -92,16 +92,30 @@ function compile(schema) {
 }
 
 /**
- * Extract the request properties
+ * Extract the object properties
  *
  * @private
- * @param {Object} req express request object
- * @param {Array} props request object properties
- * @returns {Object} request reference object
+ * @param {Object} source source object
+ * @param {boolean|string|Array} props object properties
+ * @returns {Object} extract reference object
  */
-function stripUnknownProperties(req, props) {
+function stripUnknownProperties(source, props) {
+  const extractObject = {};
+
+  // stripUnknownProperties({}, false);
+  if (!props) { return extractObject; }
+
+  // No strip processing
+  // stripUnknownProperties({}, true);
+  if (props === true) { return source; }
+
+  // stripUnknownProperties({}, 'propName');
+  if (typeof props === 'string') {
+    props = [props];
+  }
+
   return props.reduce((obj, prop) => {
-    obj[prop] = req[prop];
+    obj[prop] = source[prop];
     return obj;
-  }, {});
+  }, extractObject);
 }
