@@ -106,21 +106,117 @@ describe('eJoi', () => {
 
   describe('Schema passing and eJoi callback handling', () => {
 
-    it('should not be overridden.', done => {
-      const schema = Joi.object().keys({
-        headers: Joi.object().keys({
-          cities: Joi.object(),
-        }).options({ allowUnknown: true }),
+    describe('override option', () => {
+
+      it('should not be overridden.', done => {
+        const schema = Joi.object().keys({
+          headers: Joi.object().keys({
+            cities: Joi.object(),
+          }).options({ allowUnknown: true }),
+        });
+        const eJoiMiddleware = eJoi(schema, eJoi.callback({ override: false }));
+        const app = express();
+
+        app.get('/foo', eJoiMiddleware, (req, res) => res.json({ cities: req.get('cities') }));
+
+        request(app)
+          .get('/foo')
+          .set('cities', JSON.stringify({ korea: 'seoul', thailand: 'bangkok' }))
+          .expect(200, { cities: '{"korea":"seoul","thailand":"bangkok"}' }, done);
       });
-      const eJoiMiddleware = eJoi(schema, eJoi.callback({ override: false }));
-      const app = express();
 
-      app.get('/foo', eJoiMiddleware, (req, res) => res.json({ cities: req.get('cities') }));
+      it('should only override the properties selected by the array.', done => {
+        const schema = Joi.object().keys({
+          headers: Joi.object().keys({
+            cities: Joi.object(),
+          }).options({ allowUnknown: true }),
+          params: Joi.object().keys({
+            id: Joi.string().default('bar'),
+          }).options({ allowUnknown: true }),
+        });
+        const eJoiMiddleware = eJoi(schema, eJoi.callback({ override: ['params'] }));
+        const app = express();
 
-      request(app)
-        .get('/foo')
-        .set('cities', JSON.stringify({ korea: 'seoul', thailand: 'bangkok' }))
-        .expect(200, { cities: '{"korea":"seoul","thailand":"bangkok"}' }, done);
+        app.get('/foo/:id?', eJoiMiddleware, (req, res) => res.json({
+          headers: { cities: req.get('cities') },
+          params: req.params,
+        }));
+
+        request(app)
+          .get('/foo')
+          .set('cities', JSON.stringify({ korea: 'seoul', thailand: 'bangkok' }))
+          .expect(200, {
+            headers: { cities: '{"korea":"seoul","thailand":"bangkok"}' },
+            params: { id: 'bar' },
+          }, done);
+      });
+
+      it('should override only one property selected by the string.', done => {
+        const schema = Joi.object().keys({
+          headers: Joi.object().keys({
+            cities: Joi.object(),
+          }).options({ allowUnknown: true }),
+          params: Joi.object().keys({
+            id: Joi.string().default('bar'),
+          }).options({ allowUnknown: true }),
+        });
+        const eJoiMiddleware = eJoi(schema, { allowUnknown: true }, eJoi.callback({ override: 'headers' }));
+        const app = express();
+
+        app.get('/foo/:id?', eJoiMiddleware, (req, res) => res.json({
+          headers: { cities: req.get('cities') },
+          params: req.params,
+        }));
+
+        request(app)
+          .get('/foo')
+          .set('cities', JSON.stringify({ korea: 'seoul', thailand: 'bangkok' }))
+          .expect(200, {
+            headers: { cities: { korea: 'seoul', thailand: 'bangkok'} },
+            params: {},
+          }, done);
+      });
+
+      it('should be override the entire property.', done => {
+        const schema = Joi.object().keys({
+          headers: Joi.object().keys({
+            cities: Joi.object(),
+          }),
+          params: Joi.object().keys({
+            id: Joi.string().default('bar'),
+          }),
+          query: Joi.object({
+            q: Joi.string().default('myquery'),
+          }),
+          body: Joi.any(),
+        });
+        const eJoiMiddleware = eJoi(schema, { allowUnknown: true }, eJoi.callback({ override: true }));
+        const app = express();
+
+        app.use(bodyParser.json());
+
+        app.post('/foo/:id?', eJoiMiddleware, (req, res, next) => {
+          console.log('body', req.body);
+          next();
+        }, (req, res) => res.json({
+          headers: { cities: req.get('cities') },
+          body: req.body,
+          params: req.params,
+          query: req.query,
+        }));
+
+        request(app)
+          .post('/foo/foundy')
+          .set('cities', JSON.stringify({ korea: 'seoul', thailand: 'bangkok' }))
+          .send({ play: 'node' })
+          .expect(200, {
+            headers: { cities: { korea: 'seoul', thailand: 'bangkok'} },
+            body: { play: 'node' },
+            params: { id: 'foundy' },
+            query: { q: 'myquery' },
+          }, done);
+      });
+
     });
 
     it('should pass through the middleware and then move to the next route.', done => {
