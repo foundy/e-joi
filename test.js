@@ -244,6 +244,8 @@ describe('eJoi', () => {
         }),
       });
       const customCallback = (req, res, next, promise) => {
+        eJoi.promiseLike(promise);
+
         promise
           .then(value => next())
           .catch(error => res.status(415).end());

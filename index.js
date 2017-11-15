@@ -4,6 +4,7 @@ const Joi = require('joi');
 
 exports = module.exports = eJoi;
 exports.callback = validateCallback;
+exports.promiseLike = polyfillPromiseLike;
 
 /**
  * Default options for validateCallback
@@ -56,6 +57,9 @@ function validateCallback(options = {}) {
   const opts = Object.assign({}, defaults, options);
 
   return (req, res, next, promise) => {
+    // Polyfill extension for promise-like
+    polyfillPromiseLike(promise);
+
     promise
       .then(value => {
         if (opts.override) {
@@ -70,6 +74,36 @@ function validateCallback(options = {}) {
       })
       .catch(error => next(error));
   };
+}
+
+/**
+ * Polyfill extension method for promise-like
+ *
+ * @public
+ * @param {Object} result Joi validate result
+ * @returns {Object} Apply polyfill if promise-like is not supported
+ */
+function polyfillPromiseLike(result) {
+  // return if promise-like support
+  if (typeof result.then === 'function') {
+    return result;
+  }
+
+  const { error, value } = result;
+
+  result.then = (resolve, reject) => {
+    if (error) { return Promise.reject(error).catch(reject); }
+
+    return Promise.resolve(value).then(resolve);
+  };
+
+  result.catch = (reject) => {
+    if (error) { return Promise.reject(error).catch(reject); }
+
+    return Promise.resolve(value);
+  };
+
+  return result;
 }
 
 /**
