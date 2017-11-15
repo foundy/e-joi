@@ -5,6 +5,8 @@ Joi middleware for express
 
 # Getting Started
 
+`Recommended Joi version`: **> 13.0.0**
+
 `$ npm install e-joi`
 
 # Usage
@@ -79,6 +81,8 @@ const callback = eJoi.callback({ override: 'body' });
 >
 > Please refer to the [Joi API Reference](https://github.com/hapijs/joi/blob/v13.0.1/API.md#validatevalue-schema-options-callback)
 
+_Promise-like is supported from Joi version 12.0.0 or later._
+
 ```javascript
 const myCallback = (req, res, next, result) => {
   const { error, value } = result;
@@ -95,6 +99,16 @@ const myCallback = (req, res, next, result) => {
 // or
 
 const myCallback = (req, res, next, promise) => {
+  promise
+    .then(value => next()) // do something using value...
+    .catch(error => next(error));
+};
+
+// if promise-like is not supported
+
+const myCallback = (req, res, next, promise) => {
+  eJoi.promiseLike(promise);
+
   promise
     .then(value => next()) // do something using value...
     .catch(error => next(error));
