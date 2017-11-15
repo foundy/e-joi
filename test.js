@@ -196,7 +196,6 @@ describe('eJoi', () => {
         app.use(bodyParser.json());
 
         app.post('/foo/:id?', eJoiMiddleware, (req, res, next) => {
-          console.log('body', req.body);
           next();
         }, (req, res) => res.json({
           headers: { cities: req.get('cities') },
