@@ -1,6 +1,7 @@
 'use strict';
 
 const Joi = require('joi');
+const debug = require('debug')('eJoi');
 
 exports = module.exports = eJoi;
 exports.callback = validateCallback;
@@ -40,7 +41,11 @@ function eJoi(schema, options = {}, callback = validateCallback()) {
   return (req, res, next) => {
     const stripUnknownRequest = stripUnknownProperties(req, props);
 
+    debug('Joi.validate() <= %O', stripUnknownRequest);
+
     const result = Joi.validate(stripUnknownRequest, compiled, options);
+
+    debug('Joi.validate() => %O', result);
 
     callback(req, res, next, result);
   };
@@ -88,6 +93,8 @@ function polyfillPromiseLike(result) {
   if (typeof result.then === 'function') {
     return result;
   }
+
+  debug('This schema is a version that does not support Promise-like.');
 
   const { error, value } = result;
 
