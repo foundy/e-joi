@@ -1,6 +1,6 @@
 {
   "name": "e-joi",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Joi middleware for express",
   "main": "index.js",
   "scripts": {
