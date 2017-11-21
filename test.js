@@ -60,6 +60,20 @@ describe('eJoi', () => {
         .expect(200, 'enjoy', done);
     });
 
+    it('should respond with 200 status and `enjoy` if it is a non-object type schema.', done => {
+      const schema = Joi.object({
+        headers: Joi.any(),
+        body: Joi.any(),
+      }).when('headers', { is: Joi.exist(), then: Joi.required() });
+      const app = express();
+
+      app.get('/foo', eJoi(schema), (req, res) => res.send('enjoy'));
+
+      request(app)
+        .get('/foo')
+        .expect(200, 'enjoy', done);
+    });
+
   });
 
   describe('Passing schema and options', () => {
