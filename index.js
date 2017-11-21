@@ -30,7 +30,8 @@ const defaults = {
  */
 function eJoi(schema, options = {}, callback = validateCallback()) {
   const compiled = compile(schema);
-  const props = Object.keys(compiled.describe().children);
+  const describe = compiled.describe();
+  const props = Object.keys(describe.children || describe.base.children);
 
   // eJoi(schema, callback)
   if (typeof options === 'function') {
