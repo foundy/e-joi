@@ -39,7 +39,7 @@ function eJoi(schema, options = {}, callback = validateCallback()) {
     options = {};
   }
 
-  return (req, res, next) => {
+  return function eJoi(req, res, next) {
     const stripUnknownRequest = stripUnknownProperties(req, props);
 
     debug('Joi.validate() <= %O', stripUnknownRequest);
