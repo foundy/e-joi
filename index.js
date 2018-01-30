@@ -30,8 +30,11 @@ const defaults = {
  */
 function eJoi(schema, options = {}, callback = validateCallback()) {
   const compiled = compile(schema);
-  const describe = compiled.describe();
-  const props = Object.keys(describe.children || describe.base.children);
+  const props = getPropsByChildren(compiled);
+
+  if (!props.length) {
+    throw new Error('There are no properties to compare.');
+  }
 
   // eJoi(schema, callback)
   if (typeof options === 'function') {
@@ -160,4 +163,20 @@ function stripUnknownProperties(source, props) {
     obj[prop] = source[prop];
     return obj;
   }, extractObject);
+}
+
+/**
+ * Extracts the target attributes of the request object to be compared from the schema
+ *
+ * @private
+ * @param {Object} schema Joi schema object
+ * @returns {Array} children keys
+ */
+function getPropsByChildren(schema) {
+  const describe = schema.describe();
+
+  // extract only for object type
+  const getKeys = obj => obj.type === 'object' ? Object.keys(obj.children) : [];
+
+  return describe.type === 'alternatives' ? getKeys(describe.base) : getKeys(describe);
 }
