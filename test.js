@@ -74,6 +74,14 @@ describe('eJoi', () => {
         .expect(200, 'enjoy', done);
     });
 
+    it('should return an error if there is no attribute to compare the request object to.', done => {
+      const schema = Joi.object();
+
+      expect(() => eJoi(schema)).to.throw();
+
+      done();
+    });
+
   });
 
   describe('Passing schema and options', () => {
