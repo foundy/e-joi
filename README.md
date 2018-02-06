@@ -117,3 +117,6 @@ const myCallback = (req, res, next, promise) => {
 // route example
 app.post('/foo', eJoi(schema, myCallback), (req, res) => res.send('enjoy!'));
 ```
+
+# License
+[MIT](https://github.com/foundy/e-joi/blob/master/LICENSE)
